@@ -53,4 +53,58 @@ module control_unit(
 endmodule
   
 
+module register_file(
+    input wire clk,                    // Clock signal
+    input wire reg_write,              // Write enable signal
+    input wire [4:0] read_reg1,        // Address of the first register to read
+    input wire [4:0] read_reg2,        // Address of the second register to read
+    input wire [4:0] write_reg,        // Address of the register to write
+    input wire [31:0] write_data,      // Data to write into the register
+    output reg [31:0] read_data1,      // Data read from the first register
+    output reg [31:0] read_data2       // Data read from the second register
+);
+
+    // Define a 32x32 register array (32 registers, each 32 bits wide)
+    reg [31:0] registers [31:0];
+
+   
+    integer i;
+    initial begin
+        for (i = 0; i < 32; i = i + 1) begin
+            registers[i] = 0;
+        end
+    end
+
+    // Read operations (combinational logic)
+    always @(*) begin
+        read_data1 = registers[read_reg1];
+        read_data2 = registers[read_reg2];
+    end
+
+   
+    always @(posedge clk) begin
+        if (reg_write && write_reg != 0) begin
+            registers[write_reg] <= write_data;
+        end
+    end
+
+endmodule
+
+
+module sign_extend(
+  input wire[15:0] notextended,
+  input wire clk,
+  output reg[31:0] extended);
+  
+  always @(posedge clk)
+    begin
+      extended <= { {16{notextended[15]}}, notextended }; // sign extend
+    end
+endmodule
+
+
+
+endmodule
+  
+
 module register_file()
