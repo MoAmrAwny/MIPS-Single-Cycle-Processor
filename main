@@ -1,0 +1,56 @@
+// Code your design here
+// MIPS Processor Verilog Code
+
+module pc(lastpc,nextpc,jump,clk)
+    input lastpc,jump,clk; // wire 1 bit
+    output nextpc;
+    wire [31:0] lastpc;
+    reg [31:0] nextpc;
+    wire [31:0] jump_inst;
+    always@(posedge clk)
+      begin
+        if(jump) nextpc<=jump_inst;
+    	else nextpc<=lastpc+4;
+      end
+endmodule
+    
+module instruction_mem(
+  input wire [31:0] read_add,
+  input wire clk,
+  output reg [31:0] instruction ) // 4kb instruction memory
+  reg [31:0] mem [0:1023] // to store the instructions 1024 words of a 32-bit instruction
+
+   always @(posedge clk)
+     begin
+       instruction<=mem[read_add>>2]; 
+     end
+
+endmodule
+
+
+module control_unit(
+  input wire[4:0] op_code,
+  input clk,
+  output reg [6:0] instruction) // control unit with 5 instructions add,Lw,Sw,sub,branch
+  
+  always @(posedge clk) begin
+        case (op_code)
+            5'b00000: // ADD Instruction
+                control_signals <= 7'b1000000; // RegWrite=1, ALUOp=00 (ADD), others=0
+            5'b00001: // SUB Instruction
+                control_signals <= 7'b1000010; // RegWrite=1, ALUOp=10 (SUB), others=0
+            5'b00010: // LW Instruction
+                control_signals <= 7'b1101000; // RegWrite=1, MemRead=1, ALUSrc=1
+            5'b00011: // SW Instruction
+                control_signals <= 7'b0011000; // MemWrite=1, ALUSrc=1
+            5'b00100: // BRANCH Instruction
+                control_signals <= 7'b0000100; // Branch=1
+            default: // Default case for unsupported opcodes
+                control_signals <= 7'b0000000; // No operation
+        endcase
+    end
+
+endmodule
+  
+
+module register_file()
