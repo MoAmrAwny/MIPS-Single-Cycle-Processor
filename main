@@ -2,7 +2,8 @@
 // Code your design here
 // MIPS Processor Verilog Code
 
-module pc(lastpc,nextpc,jump,clk)
+module pc(lastpc,nextpc,jump,clk);
+  
     input lastpc,jump,clk; // wire 1 bit
     output nextpc;
     wire [31:0] lastpc;
@@ -19,7 +20,7 @@ module instruction_mem(
   input wire [31:0] read_add,
   input wire clk,
   output reg [31:0] instruction ) // 4kb instruction memory
-  reg [31:0] mem [0:1023] // to store the instructions 1024 words of a 32-bit instruction
+  reg [31:0] mem [0:1023]; // to store the instructions 1024 words of a 32-bit instruction
 
    always @(posedge clk)
      begin
@@ -118,8 +119,8 @@ module ALU(input wire[31:0] in_alu1,
         4'b0010: res_alu=in_alu1+in_alu2;
         4'b0110: 
           begin
-            res_alu=in_alu1-in_alu2
-            if(res_alu==0) zero_flag=1; ;
+            res_alu=in_alu1-in_alu2;
+            if(res_alu==0) zero_flag=1; 
           end
         4'b0000: res_alu=in_alu1 & in_alu2;
         default: 
@@ -151,7 +152,7 @@ module ALU_Control(
                     6'b100100: ALU_control = 4'b0000;  // AND
                     6'b100101: ALU_control = 4'b0001;  // OR
                     6'b101010: ALU_control = 4'b0111;  // SLT
-                  default: AU_control = 4'b0000;    // Default to AND (should handle other cases)
+                  default: ALU_control = 4'b0000;    // Default to AND (should handle other cases)
                 endcase
                   
               end
@@ -168,7 +169,7 @@ module Data_memory(
   input wire [31:0] add,
   input wire [31:0] write_data,
   input wire [6:0] mem_read,
-  input wire clk;
+  input wire clk,
   input wire [6:0] mem_write,
   output reg [31:0] read_data);
   
@@ -189,4 +190,141 @@ module Data_memory(
 endmodule
         
   
+
+
+module mux_2_1(
+    input wire [31:0] in0,  // Input 0
+    input wire [31:0] in1,  // Input 1
+    input wire sel,         // Select signal
+    output reg [31:0] out   // Output
+);
+
+    // Always block to define behavior
+    always @(*) begin
+        case (sel)
+            1'b0: out = in0; // Select input 0
+            1'b1: out = in1; // Select input 1
+            default: out = 32'b0; // Default case (optional)
+        endcase
+    end
+endmodule
+
+
+
+
+
+module MIPs_Processor(
+    input wire clk,          
+    input wire reset,        
+    output wire [31:0] out   
+);
+
+    
+    reg [31:0] lastpc;          
+    wire [31:0] nextpc;        
+    reg jump;                  
+    pc pc1(
+        .lastpc(lastpc),   
+        .nextpc(nextpc),   
+        .jump(jump),       
+        .clk(clk)
+    );
+
+    
+    wire [31:0] instruction;    
+    instruction_mem instruction_mem1(
+        .read_add(nextpc),
+        .instruction(instruction),
+        .clk(clk)
+    );
+
+    
+    wire [5:0] opcode = instruction[31:26];
+    wire [6:0] control_signal;  
+    control_unit control_unit1(
+        .op_code(opcode),
+        .clk(clk),
+        .control_signals(control_signal)
+    );
+  
+  wire [4:0] read_reg1 = instruction[25:21];
+  wire [4:0] read_reg2 = instruction[20:16];
+ 
+  wire [4:0] write_reg_to_mux = instruction[15:11];
+  wire [31:0] write_reg;
+  mux_2_1 mux1(
+    .in1(write_reg_to_mux),
+    .in0(read_reg2),
+    .sel(control_signal),
+    .out(write_reg)
+  );
+  
+  wire [4:0] write_data = instruction[25:21];
+  wire [31:0] read_data1;
+  wire [31:0] read_data2;
+  wire reg_write;
+  register_file register_file1(.clk(clk),
+                               .reg_write(reg_write),
+                               .read_reg1(read_reg1),
+                               .read_reg2(read_reg2),
+                               .write_reg(write_reg),
+                               .write_data(write_data),
+                               .read_data1(read_data1),
+                               .read_data2(read_data2));
+  
+  
+  wire [15:0] notextended = instruction[15:0];
+  wire [31:0] extended;
+  sign_extend sign_extend1(.notextended(notextended),
+                           .clk(clk),
+                           .extended(extended)
+                          );
+  
+  wire [5:0] alu_op = instruction[5:0];
+  wire [3:0] alu_control;
+  ALU_Control alu_control1(.ALU_OP(alu_op),
+                           .funct(control_signal),
+                           .ALU_control(alu_control));
+  
+  wire [31:0] in_alu2;
+  mux_2_1 mux1(
+    .in0(read_data2),
+    .in1(extended),
+    .sel(control_signal),
+    .out(in_alu2)
+  );
+  
+  wire [31:0] res_alu;
+  wire zero_flag
+  ALU alu1(.in_alu1(read_data1),
+           .in_alu2(in_alu2),
+           .ALU_control(alu_control),
+           .clk(clk),
+           .res_alu(res_alu),
+           .zero_flag(zero_flag));
+
+  wire [31:0] read_data;
+  wire [] 
+  Data_memory data_mem1(.add(res_alu),
+                        .write_data(read_data2),
+                        .mem_read(control_signal),
+                        .clk(clk),
+                        .mem_write(control_signal),
+                        .read_data(read_data)
+                       );
+  
+  mux_2_1 mux1(
+    .in0(read_data),
+    .in1(res_alu),
+    .sel(control_signal),
+    .out(out)
+  );
+  
+  assign out = (control_signals[2]) ? mem_data : alu_res;
+  
+  
+  
+endmodule
+
+
 
