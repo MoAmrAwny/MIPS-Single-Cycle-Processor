@@ -1,2 +1,4 @@
 # MIPS-Processor-
-MIPS Processor in Verilog
+This project is a MIPS Processor designed and implemented in Verilog. It showcases a simple but functional pipeline architecture for a MIPS processor that can execute a variety of instructions such as ADD, SUB, LW (Load Word), SW (Store Word), and Branch operations. The processor is designed to be modular, with each component implemented in separate Verilog modules, including the Program Counter (PC), Instruction Memory, Control Unit, Register File, ALU, ALU Control, and Data Memory.
+
+The project simulates a basic MIPS processor that processes instructions fetched from memory and executes them in a step-by-step manner based on control signals generated from the instruction's opcode and function code. The processor supports both arithmetic and logical operations as well as memory access and branching.
