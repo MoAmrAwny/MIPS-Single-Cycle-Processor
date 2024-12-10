@@ -1,0 +1,27 @@
+// Code your testbench here
+// or browse Examples
+module tb_MIPS_Processor;
+    reg clk, reset;
+    wire [31:0] pc_out;
+
+    
+    MIPS_Processor uut (
+        .clk(clk),
+        .reset(reset),
+        .pc_out(pc_out)
+    );
+
+    always #5 clk = ~clk;
+
+    initial begin
+       
+        clk = 0;
+        reset = 1;
+
+        
+        #10 reset = 0;
+
+        
+        #1000 $finish;
+    end
+endmodule
