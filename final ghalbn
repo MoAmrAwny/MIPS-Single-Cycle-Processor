@@ -1,27 +1,40 @@
 // Code your design here
 // Code your design here
+// Code your design here
 // MIPS Processor Verilog Code
 
-module pc(lastpc,nextpc,jump,clk,reset);
+module pc(
+    input wire [31:0] lastpc,
+    output reg [31:0] nextpc,
+    input wire jump,
+    input wire [31:0] jump_inst,
+    input wire clk,
+    input wire reset
+);
   
-    input lastpc,jump,clk,reset; // wire 1 bit
-    output nextpc;
-    wire [31:0] lastpc;
-    reg [31:0] nextpc;
-    wire [31:0] jump_inst;
-    always@(posedge clk)
-      begin
-        if(jump) nextpc <= jump_inst;
-    	else nextpc <= lastpc+4;
-      end
+    always @(posedge clk) begin
+        if (jump) 
+            nextpc <= jump_inst;
+        else 
+            nextpc <= lastpc + 4;
+    end
 endmodule
+
     
 module instruction_mem(
   input wire [31:0] read_add,
   input wire clk,
-  output reg [31:0] instruction ) // 4kb instruction memory
+  output reg [31:0] instruction );// 4kb instruction memory
   reg [31:0] mem [0:1023]; // to store the instructions 1024 words of a 32-bit instruction
 
+  initial 
+    begin 
+      integer i;
+      for(i=0;i<1024;i++)
+        begin
+          mem[i]=0;
+        end
+    end
    always @(posedge clk)
      begin
        instruction <= mem[ read_add >> 2 ]; // some say shift right by 2 to make it word aligned 
@@ -167,9 +180,9 @@ endmodule
 module Data_memory(
   input wire [31:0] add,
   input wire [31:0] write_data,
-  input wire [6:0] mem_read,
+  input wire  mem_read,
   input wire clk,
-  input wire [6:0] mem_write,
+  input wire  mem_write,
   output reg [31:0] read_data);
   
   reg [31:0] location [0:4095];
@@ -272,7 +285,7 @@ module MIPS_Processor(
     // Sign Extension
     sign_extend SE(
         .notextended(instruction[15:0]),
-        .clk(clk)
+        .clk(clk),
         .extended(sign_ext_imm)
     );
 
@@ -289,7 +302,7 @@ module MIPS_Processor(
         .in_alu2(alu_src ? sign_ext_imm : reg_data2),
         .ALU_control(alu_control),
         .res_alu(alu_result),
-      	.zero_flag(zero_flag),
+      	.zero_flag(zero_flag)
     );
 
     // Data Memory
@@ -307,5 +320,4 @@ module MIPS_Processor(
 
 endmodule
 
-  
   
